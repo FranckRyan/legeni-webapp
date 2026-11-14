@@ -1,18 +1,16 @@
-// TP 3.6 : pipeline multibranch – chaque branche / PR est testée, seule main publie sur Docker Hub
-// (Jenkinsfile du TP 3.5 + défi APP_COLOR, adapté aux branches)
+// TP 3.5 : tests -> build -> test d'acceptance -> push  (+ défi : paramètre APP_COLOR)
 pipeline {
     agent any
 
     parameters {
-        string(name: 'DOCKERHUB_ID', defaultValue: 'legeni07', description: 'Votre identifiant Docker Hub')
+        string(name: 'DOCKERHUB_ID', defaultValue: 'franckryan', description: 'Votre identifiant Docker Hub')
         booleanParam(name: 'PUSH', defaultValue: true, description: "Pousser l'image sur Docker Hub")
         choice(name: 'APP_COLOR', choices: ['#1f6feb', '#2da44e', '#d1242f'], description: 'Couleur de la bannière (défi)')
     }
 
     environment {
         IMAGE          = "${params.DOCKERHUB_ID}/legeni-webapp"
-        // main → 1.0.<n> ; autre branche → <branche>-<n> (ex. feature-couleur-3)
-        VERSION        = "${env.BRANCH_NAME == 'main' ? '1.0.' + env.BUILD_NUMBER : env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9.-]', '-') + '-' + env.BUILD_NUMBER}"
+        VERSION        = "1.0.${env.BUILD_NUMBER}"
         TEST_CONTAINER = "webapp-ci-${env.BUILD_NUMBER}"
         CI_NETWORK     = "ci-net-${env.BUILD_NUMBER}"
     }
@@ -55,12 +53,7 @@ pipeline {
         }
 
         stage('Push Docker Hub') {
-            when {
-                allOf {
-                    branch 'main'                      // jamais de publication depuis une branche ou une PR
-                    expression { params.PUSH }
-                }
-            }
+            when { expression { params.PUSH } }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub',
                                                   usernameVariable: 'DH_USER',
