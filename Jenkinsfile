@@ -1,4 +1,5 @@
-// TP 3.5 : tests -> build -> test d'acceptance -> push  (+ défi : paramètre APP_COLOR)
+// TP 3.6 : pipeline multibranch – chaque branche / PR est testée, seule main publie sur Docker Hub
+// (Jenkinsfile du TP 3.5 + défi APP_COLOR, adapté aux branches)
 pipeline {
     agent any
 
@@ -10,7 +11,8 @@ pipeline {
 
     environment {
         IMAGE          = "${params.DOCKERHUB_ID}/legeni-webapp"
-        VERSION        = "1.0.${env.BUILD_NUMBER}"
+        // main → 1.0.<n> ; autre branche → <branche>-<n> (ex. feature-couleur-3)
+        VERSION        = "${env.BRANCH_NAME == 'main' ? '1.0.' + env.BUILD_NUMBER : env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9.-]', '-') + '-' + env.BUILD_NUMBER}"
         TEST_CONTAINER = "webapp-ci-${env.BUILD_NUMBER}"
         CI_NETWORK     = "ci-net-${env.BUILD_NUMBER}"
     }
@@ -53,7 +55,12 @@ pipeline {
         }
 
         stage('Push Docker Hub') {
-            when { expression { params.PUSH } }
+            when {
+                allOf {
+                    branch 'main'                      // jamais de publication depuis une branche ou une PR
+                    expression { params.PUSH }
+                }
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub',
                                                   usernameVariable: 'DH_USER',
