@@ -1,4 +1,4 @@
-"""Application fil rouge du cours DevOps B3.
+"""Application fil rouge du cours DevOps B3 (webhook test).
 
 Petite application Flask utilisée dans tous les TPs (Docker, Jenkins,
 Kubernetes, Ansible) et dans le projet CI/CD final.
