@@ -93,7 +93,7 @@ pipeline {
                 // --exit-code 1 : le pipeline échoue si une vulnérabilité CRITICAL corrigeable est trouvée
                 sh '''
                     docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy_cache:/root/.cache \
-                        aquasec/trivy:0.57.1 image --severity CRITICAL --ignore-unfixed --exit-code 1 $IMAGE:$VERSION
+                        aquasec/trivy:0.57.1 image --skip-db-update --severity CRITICAL --ignore-unfixed --exit-code 1 $IMAGE:$VERSION
                 '''
             }
         }
