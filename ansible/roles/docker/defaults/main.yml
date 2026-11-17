@@ -1,0 +1,14 @@
+---
+# Utilisateur qui pilotera Docker et Minikube sans sudo (l'utilisateur qui lance le playbook)
+docker_users:
+  - "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
+  - docker-buildx-plugin
+docker_python_packages:
+  - python3-docker
+  - python3-requests
+  - python3-kubernetes

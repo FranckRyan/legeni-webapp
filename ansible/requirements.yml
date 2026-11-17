@@ -1,0 +1,5 @@
+---
+# Collections utilisées par provision.yml et deploy.yml
+collections:
+  - name: community.docker
+  - name: kubernetes.core

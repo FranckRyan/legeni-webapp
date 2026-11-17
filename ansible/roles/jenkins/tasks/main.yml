@@ -1,0 +1,87 @@
+---
+- name: Dossier de Jenkins
+  ansible.builtin.file:
+    path: "{{ jenkins_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Image Jenkins du TP 3.1 (Docker CLI, kubectl, Ansible, plugins)
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ jenkins_dir }}/{{ item }}"
+    mode: "0644"
+  loop: [Dockerfile, plugins.txt, docker-compose.yml]
+
+- name: GID du socket Docker
+  ansible.builtin.stat:
+    path: /var/run/docker.sock
+  register: socket_docker
+
+- name: Fichier .env (DOCKER_GID) et override réseau
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ jenkins_dir }}/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - {src: env.j2, dest: .env}
+    - {src: docker-compose.override.yml.j2, dest: docker-compose.override.yml}
+
+- name: Démarrer Jenkins (docker compose up -d --build si l'image manque)
+  community.docker.docker_compose_v2:
+    project_src: "{{ jenkins_dir }}"
+    project_name: "{{ jenkins_project }}"
+    state: present
+
+- name: Attendre que Jenkins réponde
+  ansible.builtin.uri:
+    url: "{{ jenkins_url }}/login"
+    status_code: [200, 403]
+  register: jenkins_up
+  retries: 60
+  delay: 5
+  until: jenkins_up.status in [200, 403]
+
+# Jenkins doit joindre l'API Kubernetes : kubeconfig autonome (certificats inclus)
+# dont l'adresse est celle de minikube sur le réseau partagé.
+- name: Adresse de minikube
+  ansible.builtin.command: minikube ip
+  become: false
+  register: minikube_ip
+  changed_when: false
+
+- name: Kubeconfig autonome de l'utilisateur
+  ansible.builtin.command: kubectl config view --flatten --minify --context minikube
+  become: false
+  register: kubeconfig_brut
+  changed_when: false
+
+- name: Kubeconfig copié dans Jenkins (~/.kube/config de l'utilisateur jenkins)
+  community.docker.docker_container_copy_into:
+    container: jenkins
+    content: "{{ kubeconfig_brut.stdout | regex_replace('server: https://[^\\s]+', 'server: https://' ~ minikube_ip.stdout ~ ':8443') }}\n"
+    container_path: /var/jenkins_home/.kube/config
+    owner_id: 1000
+    group_id: 1000
+    mode: 0600
+  no_log: true          # contient les certificats clients du cluster
+
+- name: Le même fichier, à déposer dans Jenkins comme credential « kubeconfig » (Secret file)
+  ansible.builtin.copy:
+    content: "{{ kubeconfig_brut.stdout | regex_replace('server: https://[^\\s]+', 'server: https://' ~ minikube_ip.stdout ~ ':8443') }}\n"
+    dest: "/home/{{ jenkins_user }}/kubeconfig-jenkins.yml"
+    owner: "{{ jenkins_user }}"
+    mode: "0600"
+  no_log: true
+
+- name: Mot de passe initial de Jenkins (premier démarrage)
+  ansible.builtin.command: docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+  register: mdp_initial
+  changed_when: false
+  failed_when: false
+
+- name: Récapitulatif
+  ansible.builtin.debug:
+    msg:
+      - "Jenkins : {{ jenkins_url }}"
+      - "{{ 'Mot de passe initial : ' ~ mdp_initial.stdout if mdp_initial.rc == 0 else 'Jenkins déjà configuré' }}"
+      - "Credential « kubeconfig » : /home/{{ jenkins_user }}/kubeconfig-jenkins.yml"

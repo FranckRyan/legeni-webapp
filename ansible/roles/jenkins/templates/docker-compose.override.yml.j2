@@ -1,0 +1,10 @@
+# Généré par Ansible (rôle jenkins) : Jenkins rejoint le réseau partagé avec Minikube
+services:
+  jenkins:
+    networks:
+      {{ devops_net }}:
+        ipv4_address: {{ jenkins_ip }}
+
+networks:
+  {{ devops_net }}:
+    external: true

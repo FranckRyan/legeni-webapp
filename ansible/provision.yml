@@ -1,0 +1,26 @@
+---
+# LOT 2 – Provisionnement de l'infrastructure sur une machine Ubuntu vierge (WSL2 ou VM) :
+# Docker → réseau devops-net → Minikube (addons metrics-server, ingress) → Jenkins (image du TP 3.1).
+#
+#   cd ansible
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook provision.yml -K          # -K : mot de passe sudo
+#
+# Idempotent : une 2e exécution doit finir avec changed=0.
+- name: Infrastructure CI/CD (Jenkins + Minikube) sur une seule machine
+  hosts: devops
+  become: true
+
+  pre_tasks:
+    - name: Système supporté
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['distribution'] == 'Ubuntu'
+          - ansible_facts['memtotal_mb'] >= 3500
+        fail_msg: "Ubuntu avec au moins 4 Go de RAM requis"
+
+  roles:
+    - docker
+    - reseau
+    - minikube
+    - jenkins

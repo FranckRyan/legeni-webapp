@@ -1,0 +1,19 @@
+# Bonus : autoscaling horizontal (production)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: webapp
+  namespace: {{ k8s_namespace }}
+  labels: {app: webapp, env: {{ app_env }}}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: webapp
+  minReplicas: {{ app_replicas }}
+  maxReplicas: {{ hpa_max_replicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: 50}

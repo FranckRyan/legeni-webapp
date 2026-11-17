@@ -1,0 +1,10 @@
+---
+k8s_namespace: legeni-prod
+app_env: prod
+app_color: "#2da44e"           # vert
+app_replicas: 3                # = minReplicas de l'HPA
+app_node_port: 30082
+app_host: legeni.local
+hpa_enabled: true
+hpa_max_replicas: 6
+cronjob_enabled: true

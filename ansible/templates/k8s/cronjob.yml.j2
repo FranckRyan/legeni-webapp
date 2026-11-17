@@ -1,0 +1,26 @@
+# Bonus : contrôle de santé planifié de la production (toutes les 5 minutes)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: controle-sante
+  namespace: {{ k8s_namespace }}
+  labels: {app: controle-sante, env: {{ app_env }}}
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: "Africa/Douala"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              command: ["sh", "-c", "date; curl -sf --max-time 5 http://webapp/health && curl -sf --max-time 5 http://webapp/ready && echo ' -> OK'"]
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {cpu: 100m, memory: 32Mi}

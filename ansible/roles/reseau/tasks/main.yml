@@ -1,0 +1,9 @@
+---
+- name: Réseau Docker {{ devops_net }}
+  community.docker.docker_network:
+    name: "{{ devops_net }}"
+    driver: bridge
+    ipam_config:
+      - subnet: "{{ devops_subnet }}"
+        gateway: "{{ devops_gateway }}"
+        iprange: "{{ devops_iprange }}"

@@ -1,0 +1,5 @@
+---
+# Modèle. Le vrai fichier vars/vault.yml est créé et CHIFFRÉ par : bash scripts/init_vault.sh
+#   (ansible-vault encrypt vars/vault.yml) – seul le fichier chiffré est commité.
+redis_password_staging: "A-CHANGER"
+redis_password_prod: "A-CHANGER"
