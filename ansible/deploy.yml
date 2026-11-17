@@ -114,7 +114,7 @@
           kubernetes.core.k8s_info:
             kind: Pod
             namespace: "{{ k8s_namespace }}"
-            label_selector: "app=webapp,version={{ app_version }}"
+            label_selectors: ["app=webapp", "version={{ app_version }}"]
             field_selectors: [status.phase=Running]
           register: pods
 
