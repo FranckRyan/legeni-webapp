@@ -36,8 +36,12 @@ spec:
         # change quand la configuration change => rolling update (les pods relisent la ConfigMap)
         checksum/config: "{{ (app_env ~ app_color) | hash('sha1') }}"
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: webapp
+          lifecycle:
+            preStop:   # laisse le temps au Service de retirer le pod avant l'arrêt
+              exec: {command: ["sleep", "5"]}
           image: "{{ app_image }}:{{ app_version }}"
           ports:
             - containerPort: 5000
