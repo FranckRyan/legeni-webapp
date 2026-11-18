@@ -1,0 +1,7 @@
+---
+jenkins_dir: /opt/jenkins
+# Même nom de projet Compose que l'installation du TP 3.1 : volume jenkins-docker_jenkins_home réutilisé
+jenkins_project: jenkins-docker
+jenkins_ip: 192.168.58.10
+jenkins_url: http://localhost:8080
+jenkins_user: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"

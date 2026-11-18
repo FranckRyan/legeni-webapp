@@ -1,0 +1,22 @@
+# Bonus : Ingress HTTPS (staging.legeni.local / legeni.local), certificat dans le Secret legeni-tls
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legeni
+  namespace: {{ k8s_namespace }}
+  labels: {app: webapp, env: {{ app_env }}}
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [{{ app_host }}]
+      secretName: legeni-tls
+  rules:
+    - host: {{ app_host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp
+                port: {number: 80}

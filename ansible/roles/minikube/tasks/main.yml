@@ -1,0 +1,48 @@
+---
+- name: kubectl {{ kubectl_version }}
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: "0755"
+
+- name: minikube {{ minikube_version }}
+  ansible.builtin.get_url:
+    url: "https://github.com/kubernetes/minikube/releases/download/{{ minikube_version }}/minikube-linux-amd64"
+    dest: /usr/local/bin/minikube
+    mode: "0755"
+
+# minikube refuse de tourner en root avec le driver docker : les tâches suivantes sont exécutées
+# par l'utilisateur qui lance le playbook (become: false), via « sg docker » pour que le groupe
+# docker soit actif même juste après son ajout par le rôle docker (machine vierge).
+- name: État du cluster
+  ansible.builtin.command: sg docker -c "minikube status --format '{{ '{{' }}.Host{{ '}}' }}'"
+  become: false
+  register: minikube_status
+  changed_when: false
+  failed_when: false
+
+- name: Démarrer minikube sur le réseau {{ minikube_network }}
+  ansible.builtin.command: >-
+    sg docker -c "minikube start --driver={{ minikube_driver }} --network={{ minikube_network }}
+    --cpus={{ minikube_cpus }} --memory={{ minikube_memory }}"
+  become: false
+  when: "'Running' not in minikube_status.stdout"
+  changed_when: true
+
+- name: Liste des addons
+  ansible.builtin.command: sg docker -c "minikube addons list -o json"
+  become: false
+  register: addons
+  changed_when: false
+
+- name: Activer les addons manquants
+  ansible.builtin.command: sg docker -c "minikube addons enable {{ item }}"
+  become: false
+  loop: "{{ minikube_addons }}"
+  when: (addons.stdout | from_json)[item]['Status'] != 'enabled'
+  changed_when: true
+
+- name: Le nœud est Ready
+  ansible.builtin.command: kubectl wait --for=condition=Ready node/minikube --timeout=180s
+  become: false
+  changed_when: false

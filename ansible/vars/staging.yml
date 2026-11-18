@@ -1,0 +1,10 @@
+---
+k8s_namespace: legeni-staging
+app_env: staging
+app_color: "#bf8700"           # orange
+app_replicas: 2
+app_node_port: 30081
+app_host: staging.legeni.local
+hpa_enabled: false
+hpa_max_replicas: 4             # non utilisé (HPA désactivé en staging)
+cronjob_enabled: false

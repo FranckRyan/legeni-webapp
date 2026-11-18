@@ -1,0 +1,6 @@
+---
+# Réseau Docker commun à Minikube et Jenkins (sous-réseau explicite = adresses fixes possibles)
+devops_net: devops-net
+devops_subnet: 192.168.58.0/24
+devops_gateway: 192.168.58.1
+devops_iprange: 192.168.58.128/25     # adresses attribuées automatiquement (conteneurs de test)

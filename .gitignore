@@ -2,3 +2,7 @@ __pycache__/
 .pytest_cache/
 reports/
 .venv/
+# Secrets : jamais dans Git (le fichier chiffré ansible/vars/vault.yml, lui, est commité)
+.vault_pass*
+*.key
+kubeconfig*

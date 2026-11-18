@@ -1,0 +1,11 @@
+---
+kubectl_version: v1.37.2
+minikube_version: v1.39.0
+minikube_driver: docker
+minikube_network: "{{ devops_net | default('devops-net') }}"
+minikube_cpus: 2
+# 2600 Mo suffisent quand la machine a peu de RAM (WSL limité à 4 Go) ; 4096 sinon
+minikube_memory: "{{ 4096 if ansible_facts['memtotal_mb'] > 7000 else 2600 }}"
+minikube_addons:
+  - metrics-server
+  - ingress

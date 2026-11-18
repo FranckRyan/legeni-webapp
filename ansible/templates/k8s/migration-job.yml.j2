@@ -1,0 +1,34 @@
+# Bonus : Job d'initialisation/migration lancé AVANT le rolling update.
+# Il attend Redis puis enregistre la version du schéma et initialise le compteur s'il n'existe pas.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ migration_job }}
+  namespace: {{ k8s_namespace }}
+  labels: {app: migration, env: {{ app_env }}}
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {app: migration, env: {{ app_env }}}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: redis:7.4-alpine
+          env:
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef: {name: redis-secret, key: REDIS_PASSWORD}
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h redis ping | grep -q PONG; do echo "attente de Redis"; sleep 2; done
+              redis-cli -h redis SETNX visits 0
+              redis-cli -h redis SET legeni:schema_version "{{ app_version }}"
+              echo "Migration {{ app_version }} terminée"
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
